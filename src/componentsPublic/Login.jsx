@@ -71,9 +71,9 @@ function Login() {
     const handdleLogin = async (e) => {
         e.preventDefault();
 
-        if (usuario === 'Didier' && contrasena === '123') {
+        if (usuario === 'ROGO' && contrasena === '15628') {
             loguearse({
-                usuario: 'Didier',
+                usuario: 'ROGO',
                 cargo: 'administrador',
             });
             Swal.fire({
