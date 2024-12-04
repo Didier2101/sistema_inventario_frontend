@@ -570,7 +570,7 @@ const Productos = ({ userRole }) => {
           <tbody>
             {productosMostrados.length === 0 ? (
               <tr>
-                <td >
+                <td style={{ textAlign: 'center', padding: '1rem', fontStyle: 'italic', color: '#666' }}>
                   No hay productos registrados.
                 </td>
               </tr>
