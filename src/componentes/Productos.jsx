@@ -568,160 +568,150 @@ const Productos = ({ userRole }) => {
             </tr>
           </thead>
           <tbody>
-            {productosMostrados.length === 0 ? (
-              <tr>
-                <td style={{ textAlign: 'center', padding: '1rem', fontStyle: 'italic', color: '#666' }}>
-                  No hay productos registrados.
-                </td>
-              </tr>
-            ) : (
-
-              productosMostrados.filter((producto) =>
+            {productosMostrados
+              .filter((producto) =>
                 producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                 producto.bodega.toLowerCase().includes(busqueda.toLowerCase()) ||
                 producto.referencia.toLowerCase().includes(busqueda.toLowerCase())
               )
-                .map((producto, index) => (
-                  <tr className="fila" key={index}>
-                    <td className="a1">
+              .map((producto, index) => (
+                <tr className="fila" key={index}>
+                  <td className="a1">
+                    <div className="centered-content">
+                      <LocationOnIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      {producto.bodega}
+                    </div>
+                  </td>
+
+
+                  <td className="a2">
+                    <div className="centered-content">
+                      <Inventory2OutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      {capitalizeWords(producto.nombre)}
+                    </div>
+                  </td>
+
+                  <td className="a2">
+                    <div className="centered-content">
+                      <QrCodeIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      {capitalizeWords(producto.referencia)}
+                    </div>
+                  </td>
+
+                  <td className="a1">
+                    <div className="centered-content">
+                      <DescriptionIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      {capitalizeWords(producto.descripcion)}
+                    </div>
+                  </td>
+
+
+                  <td className="a2">
+                    <div className="centered-content">
+                      <PriceCheckOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      {producto.precio_venta}
+                    </div>
+                  </td>
+                  <td
+                    className={producto.cantidad === 0 ? 'agotado' : userRole === 'vendedor' ? '' : 'a1'}
+                  >
+                    <div
+
+                      className="centered-content">
+                      <InventoryOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      <strong>{producto.cantidad}
+                      </strong>
+                    </div>
+
+                  </td>
+
+
+                  {/* codigo para actualiza stock */}
+                  {(userRole !== 'vendedor') && (
+
+                    <td className="actualizarStock">
                       <div className="centered-content">
-                        <LocationOnIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        {producto.bodega}
-                      </div>
-                    </td>
+                        <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'restar')}>
+                          <HorizontalRuleIcon />
+                        </IconButton>
+                        <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'sumar')}>
+                          <AddIcon />
+                        </IconButton>
+                        {formStock === producto.id_producto && (
+                          <div className="formStock">
+                            <label>Insertar Cantidad</label>
+                            <TextField
+                              value={nuevaCantidad}
+                              onChange={handleNuevoStock}
+                            />
+                            <div className="check">
+                              <IconButton
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={() => actualizarCantidad(producto.id_producto, nuevaCantidad, operacion)}
 
+                              >
+                                <CheckIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
 
-                    <td className="a2">
-                      <div className="centered-content">
-                        <Inventory2OutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        {capitalizeWords(producto.nombre)}
-                      </div>
-                    </td>
-
-                    <td className="a2">
-                      <div className="centered-content">
-                        <QrCodeIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        {capitalizeWords(producto.referencia)}
-                      </div>
-                    </td>
-
-                    <td className="a1">
-                      <div className="centered-content">
-                        <DescriptionIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        {capitalizeWords(producto.descripcion)}
-                      </div>
-                    </td>
-
-
-                    <td className="a2">
-                      <div className="centered-content">
-                        <PriceCheckOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        {producto.precio_venta}
-                      </div>
-                    </td>
-                    <td
-                      className={producto.cantidad === 0 ? 'agotado' : userRole === 'vendedor' ? '' : 'a1'}
-                    >
-                      <div
-
-                        className="centered-content">
-                        <InventoryOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
-                        <strong>{producto.cantidad}
-                        </strong>
-                      </div>
-
-                    </td>
-
-
-                    {/* codigo para actualiza stock */}
-                    {(userRole !== 'vendedor') && (
-
-                      <td className="actualizarStock">
-                        <div className="centered-content">
-                          <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'restar')}>
-                            <HorizontalRuleIcon />
-                          </IconButton>
-                          <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'sumar')}>
-                            <AddIcon />
-                          </IconButton>
-                          {formStock === producto.id_producto && (
-                            <div className="formStock">
-                              <label>Insertar Cantidad</label>
-                              <TextField
-                                value={nuevaCantidad}
-                                onChange={handleNuevoStock}
-                              />
-                              <div className="check">
-                                <IconButton
-                                  size="small"
-                                  variant="contained"
-                                  color="success"
-                                  onClick={() => actualizarCantidad(producto.id_producto, nuevaCantidad, operacion)}
-
-                                >
-                                  <CheckIcon />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-
-                                  color="secondary"
-                                  onClick={ocultarFormularioStock}
-                                  variant="outlined"
-                                >
-                                  <ClearIcon />
-                                </IconButton>
-                              </div>
-
+                                color="secondary"
+                                onClick={ocultarFormularioStock}
+                                variant="outlined"
+                              >
+                                <ClearIcon />
+                              </IconButton>
                             </div>
-                          )}
-                        </div>
-                      </td>
 
-                    )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                  )}
 
 
-                    {(userRole === 'administrador') && (
-                      <td className="a10">
-                        <div className="centered-content">
-                          <IconButton onClick={() => setSubMenu(producto.id_producto)}>
-                            <MoreVertIcon />
-                          </IconButton>
-                          {subMenu === producto.id_producto && (
-                            <div className="sub_menu" onMouseLeave={ocultarSubMenu}>
+                  {(userRole === 'administrador') && (
+                    <td className="a10">
+                      <div className="centered-content">
+                        <IconButton onClick={() => setSubMenu(producto.id_producto)}>
+                          <MoreVertIcon />
+                        </IconButton>
+                        {subMenu === producto.id_producto && (
+                          <div className="sub_menu" onMouseLeave={ocultarSubMenu}>
 
-                              <div onClick={() => obtenerProductoPorId(producto.id_producto)}>
-                                <IconButton size="small" color="success">
-                                  <InfoIcon />
-                                </IconButton>
-                                <span>Detalles</span>
-                              </div>
-
-                              <div onClick={() => activarModoEdicion(producto)}>
-                                <IconButton size="small" color="primary">
-                                  <EditIcon />
-                                </IconButton>
-                                <span>Editar</span>
-                              </div>
-
-                              <div onClick={() => eliminarProducto(producto.id_producto, producto.nombre)}>
-                                <IconButton size="small" color="error">
-                                  <DeleteIcon />
-                                </IconButton>
-                                <span>Eliminar</span>
-                              </div>
+                            <div onClick={() => obtenerProductoPorId(producto.id_producto)}>
+                              <IconButton size="small" color="success">
+                                <InfoIcon />
+                              </IconButton>
+                              <span>Detalles</span>
                             </div>
-                          )}
-                        </div>
-                      </td>
-                    )}
+
+                            <div onClick={() => activarModoEdicion(producto)}>
+                              <IconButton size="small" color="primary">
+                                <EditIcon />
+                              </IconButton>
+                              <span>Editar</span>
+                            </div>
+
+                            <div onClick={() => eliminarProducto(producto.id_producto, producto.nombre)}>
+                              <IconButton size="small" color="error">
+                                <DeleteIcon />
+                              </IconButton>
+                              <span>Eliminar</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  )}
 
 
 
-                  </tr>
-                ))
-
-            )}
-
+                </tr>
+              ))}
           </tbody>
         </table>
 
