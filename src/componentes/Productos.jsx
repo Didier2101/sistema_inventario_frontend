@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { Box, Button, IconButton, Modal, TextField, Select, MenuItem, FormControl, InputLabel, Switch, InputBase } from "@mui/material";
+import { Box, Button, IconButton, Modal, TextField, Select, MenuItem, FormControl, InputLabel, InputBase, InputAdornment } from "@mui/material";
 
 // import CheckIcon from '@mui/icons-material/Check';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -15,14 +15,24 @@ import QrCodeIcon from '@mui/icons-material/QrCode';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PriceCheckOutlinedIcon from '@mui/icons-material/PriceCheckOutlined';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import CheckIcon from '@mui/icons-material/Check';
+import ClearIcon from '@mui/icons-material/Clear';
+import SearchIcon from '@mui/icons-material/Search';
+import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
+
 
 import Context from "../contexto/Context";
+import PropTypes from 'prop-types';
 
-const Productos = () => {
+
+
+const Productos = ({ userRole }) => {
+
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const { usuario } = useContext(Context);
 
+  const [operacion, setOperacion] = useState('');
   const [nuevaCantidad, setNuevaCantidad] = useState('');
   const [formStock, setFormStock] = useState(false)
   const [subMenu, setSubMenu] = useState(false)
@@ -32,36 +42,51 @@ const Productos = () => {
   const [detalleProducto, setDetalleProducto] = useState(null);
   const [productos, setProductos] = useState([]);
   const [formulario, setFormulario] = useState(false);
-  const [proveedores, setProveedores] = useState([]);
   const [bodegas, setBodegas] = useState([]);
   const [formData, setFormData] = useState({
-    proveedor: '',
     bodega: '',
     nombre: '',
     referencia: '',
     descripcion: '',
-    precio_compra: '',
     precio_venta: '',
     cantidad: '',
-    estado: 1, // Opcionalmente puedes establecer el valor inicial como `true` o `false`
   });
+  const [paginaActual, setPaginaActual] = useState(1); // Página actual
+  const productosPorPagina = 10; // Cantidad de productos por página
+
+  // Filtrar los productos según la búsqueda
+  const productosFiltrados = productos.filter((producto) =>
+    producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    producto.bodega.toLowerCase().includes(busqueda.toLowerCase()) ||
+    producto.referencia.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  // Calcular los productos que se deben mostrar en la página actual
+  const productosMostrados = productosFiltrados.slice(
+    (paginaActual - 1) * productosPorPagina,
+    paginaActual * productosPorPagina
+  );
+
+  // Función para cambiar de página
+  const cambiarPagina = (pagina) => {
+    setPaginaActual(pagina);
+  };
+
+  // Número total de páginas
+  const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina);
 
   // Activar el modo de edición y configurar el formulario con datos del producto seleccionado
   const activarModoEdicion = (producto) => {
     const bodega = bodegas.find(b => b.id_bodega === producto.bodega);
-    const proveedor = proveedores.find(p => p.id_proveedor === producto.proveedor);
     setModoEditar(true);
     setFormulario(true);
     setFormData({
-      proveedor: proveedor ? proveedor.id_proveedor : '',
       bodega: bodega ? bodega.id_bodega : '',
       nombre: producto.nombre,
       referencia: producto.referencia,
       descripcion: producto.descripcion,
-      precio_compra: producto.precio_compra,
       precio_venta: producto.precio_venta,
       cantidad: producto.cantidad,
-      estado: producto.estado
     });
     setProductoID(producto.id_producto);  // Guardar ID del producto seleccionado
   };
@@ -74,49 +99,92 @@ const Productos = () => {
 
   const obtenerProductos = async () => {
     try {
-      const response = await fetch("http://localhost:4000/productos");
+      // Mostrar mensaje de carga
+      Swal.fire({
+        title: "Cargando productos...",
+        text: "Por favor, espera mientras se cargan los productos.",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await fetch(`${apiUrl}/productos`);
       if (response.ok) {
         const data_productos = await response.json();
-        setProductos(data_productos);
+        // Ordenar los productos alfabéticamente por el nombre
+        const productosOrdenados = data_productos.sort((a, b) => {
+          if (a.nombre < b.nombre) {
+            return -1; // Si a es alfabéticamente antes que b, a va primero
+          }
+          if (a.nombre > b.nombre) {
+            return 1; // Si a es alfabéticamente después que b, b va primero
+          }
+          return 0; // Si ambos son iguales, no hay cambio
+        });
+
+        setProductos(productosOrdenados); // Asignar los productos ordenados al estado
+
+        // Cerrar el mensaje de carga
+        Swal.close();
+
       } else {
-        console.error("No se pudo obtener los productos");
+        // Cerrar el mensaje de carga
+        Swal.close();
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo obtener los productos. Inténtalo de nuevo.",
+        });
       }
     } catch (error) {
-      console.error('Error al obtener los productos', error);
+      // Cerrar el mensaje de carga en caso de error
+      Swal.close();
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Ocurrió un error al intentar obtener los productos.",
+      });
     }
   };
 
-  const obtenerProveedores = async () => {
-    try {
-      const response = await fetch("http://localhost:4000/proveedores");
-      if (response.ok) {
-        const data_proveedores = await response.json();
-        setProveedores(data_proveedores);
-      } else {
-        console.error("No se pudo obtener los proveedores");
-      }
-    } catch (error) {
-      console.error('Error al obtener los proveedores', error);
-    }
-  };
+
+
 
   const obtenerBodegas = async () => {
     try {
-      const response = await fetch("http://localhost:4000/bodegas");
+      // Mostrar mensaje de carg
+
+      const response = await fetch(`${apiUrl}/bodegas`);
       if (response.ok) {
         const data_bodegas = await response.json();
         setBodegas(data_bodegas);
+
       } else {
-        console.error("No se pudo obtener las bodegaes");
+        // Cerrar el mensaje de carga
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo obtener las bodegas. Inténtalo de nuevo.",
+        });
       }
     } catch (error) {
-      console.error('Error al obtener las bodegaes', error);
+      // Cerrar el mensaje de carga en caso de error
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Ocurrió un error al intentar obtener las bodegas.",
+      });
     }
   };
 
+
   useEffect(() => {
     obtenerProductos();
-    obtenerProveedores();
     obtenerBodegas();
   }, []);
 
@@ -125,7 +193,18 @@ const Productos = () => {
   const enviarForm = async (e) => {
     e.preventDefault();
     try {
-      let url = 'http://localhost:4000/productos';
+      // Mostrar mensaje de carga mientras se procesan los datos
+      Swal.fire({
+        title: 'Procesando...',
+        text: 'Por favor espera mientras se guarda el producto.',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      let url = `${apiUrl}/productos`;
       let method = 'POST';
 
 
@@ -143,6 +222,8 @@ const Productos = () => {
         body: JSON.stringify({ ...formData }),
       });
 
+      Swal.close();
+
       if (response.status === 400) {
         const data = await response.json();
         if (data.error && data.error === "REGISTRO_DUPLICADO") {
@@ -153,14 +234,22 @@ const Productos = () => {
           });
           return;
         } else {
-          console.error('Error al agregar o actualizar el cliente');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Hubo un problema al intentar agregar o actualizar el producto. Inténtalo de nuevo.',
+          });
           return;
         }
       }
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error al agregar o actualizar el producto:', errorData.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: `Error al agregar o actualizar el producto: ${errorData.message}`,
+        });
         return;
       }
 
@@ -183,34 +272,42 @@ const Productos = () => {
       }
       ocultarFormulario();
       obtenerProductos();
-      setFormData({
-        activo: true,
-      });
     } catch (error) {
-      console.error('Error en la solicitud:', error);
+      // Manejo de errores generales
+      Swal.close();  // Cerrar el mensaje de carga si ocurre un error
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al intentar guardar el producto. Inténtalo de nuevo.',
+      });
     }
-
   };
 
   const obtenerProductoPorId = async (idProducto) => {
     try {
-      const response = await fetch(`http://localhost:4000/productos/${idProducto}`);
+      const response = await fetch(`${apiUrl}/productos/${idProducto}`);
       if (response.ok) {
         const data = await response.json();
 
         const bodega = bodegas.find(b => b.id_bodega === data.bodega);
-        const proveedor = proveedores.find(p => p.id_proveedor === data.proveedor);
 
         setDetalleProducto({
           ...data,
           bodega: bodega ? bodega.nombres : 'Desconocida',
-          proveedor: proveedor ? proveedor.empresa : 'Desconocido'
         });
       } else {
-        console.error("No se pudo obtener el producto");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo obtener el producto. Inténtalo de nuevo.',
+        });
       }
     } catch (error) {
-      console.error('Error al obtener el producto', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al intentar obtener el producto.',
+      });
     }
   };
 
@@ -239,7 +336,7 @@ const Productos = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await fetch(`http://localhost:4000/productos/${productoId}`, {
+        const response = await fetch(`${apiUrl}/productos/${productoId}`, {
           method: 'DELETE',
         });
 
@@ -284,43 +381,11 @@ const Productos = () => {
       nombre: '',
       referencia: '',
       descripcion: '',
-      precio_compra: '',
       precio_venta: '',
       cantidad: '',
-      estado: true,
     });
   };
 
-
-
-  const toggleEstado = async (id_producto, nuevoEstado) => {
-    try {
-      const response = await fetch(`http://localhost:4000/productos/${id_producto}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ estado: nuevoEstado }),
-      });
-
-      if (response.ok) {
-        // Actualizar el estado local de productos
-        setProductos(productos.map((producto) =>
-          producto.id_producto === id_producto ? { ...producto, estado: nuevoEstado } : producto
-        ));
-      } else {
-        console.error('No se pudo actualizar el estado del producto');
-      }
-    } catch (error) {
-      console.error('Error al actualizar el estado del producto', error);
-    }
-  };
-
-  // codigo para añadir cantidad al un producto
-
-  const mostrarEstadoTexto = (estado) => {
-    return estado ? 'Activo' : 'Inactivo';
-  };
 
   const style_form = {
     position: 'absolute',
@@ -333,7 +398,8 @@ const Productos = () => {
     pt: 2,
     px: 4,
     pb: 3,
-    overflowY: 'auto', // Desplazamiento solo vertical
+    overflowY: 'auto',
+    borderRadius: '10px',
     '@media (max-width: 600px)': {
       width: '100%',
       position: 'relative',
@@ -384,49 +450,53 @@ const Productos = () => {
   const handleNuevoStock = (e) => {
     setNuevaCantidad(e.target.value);
   };
-  const mostrarFormularioStock = (productoId) => {
-    setFormStock(productoId);
-  };
+
   const ocultarFormularioStock = () => {
     setFormStock(false);
     setNuevaCantidad('');
   };
 
-  const actualizarCantidad = async (id_producto, nuevaCantidad) => {
+  // Función para manejar la cantidad y tipo de operación (sumar o restar)
+  const actualizarCantidad = async (idProducto, nuevaCantidad, operacion) => {
     try {
-      // Llama a la API del backend para actualizar el stock
-      const response = await fetch(`http://localhost:4000/productos/${id_producto}/cantidad`, {
+      // Llama al backend con la cantidad y operación seleccionada
+      const response = await fetch(`${apiUrl}/productos/${idProducto}/cantidad`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nuevaCantidad: parseInt(nuevaCantidad) }),
+        body: JSON.stringify({ nuevaCantidad: parseInt(nuevaCantidad), operacion }),
       });
 
       if (!response.ok) {
         throw new Error('No se pudo actualizar la cantidad');
       }
 
-      // Muestra el mensaje de éxito en la consola
       Swal.fire({
         title: 'Stock Actualizado',
         text: 'La cantidad de stock ha sido actualizada correctamente.',
         icon: 'success',
         timer: 1000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
 
-      setNuevaCantidad('');
-      setFormStock(false);
-      obtenerProductos();
+      setNuevaCantidad(''); // Limpia el campo de cantidad
+      setFormStock(false);  // Cierra el formulario
+      obtenerProductos();   // Refresca la lista de productos
 
     } catch (error) {
-      console.error('Error al actualizar el stock:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'No se pudo actualizar el stock.',
       });
     }
-    ocultarFormularioStock()
+
+    ocultarFormularioStock(); // Oculta el formulario
+  };
+
+  // Mostrar el formulario para sumar o restar
+  const mostrarFormularioStock = (idProducto, operacion) => {
+    setOperacion(operacion);  // Establece si es 'sumar' o 'restar'
+    setFormStock(idProducto);       // Abre el formulario
   };
 
 
@@ -436,37 +506,71 @@ const Productos = () => {
 
       <section className="section-item">
         <section className="contenedor_buscar">
-          <InputBase
-            style={{ fontSize: '1.6rem' }}
-            placeholder="Buscar productos"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-        </section >
+          <div className="witches a1">
+            <ul className="witches-list">
+              <li className="witches-item">
+                <span className="cantidad-empleados">{productos.length}</span>
+                Listado de los productos
+              </li>
 
-        <div className="witches">
-          <ul className="witches-list">
-            <li className="witches-item">
-              <span className="cantidad-empleados">{productos.length}</span>
-              Listado de los productos
-            </li>
-            <li>
+            </ul>
+          </div>
+          <div>
+
+            <InputBase
+              sx={{
+                width: 'auto',
+                borderRadius: '14px',
+                backgroundColor: '#ebf0f4',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                paddingLeft: '10px',
+                fontSize: '1.2rem',
+                marginRight: '10px',
+              }}
+              placeholder="Buscar productos"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              startAdornment={
+                <InputAdornment position="start">
+                  <SearchIcon style={{ color: '#949393', fontSize: '1.5rem', }} />
+                </InputAdornment>
+              }
+            />
+
+          </div>
+
+          {(userRole !== 'vendedor') && (
+            <div>
               <IconButton
-                color="primary" sx={{ p: '8px' }}
+                color="primary"
                 onClick={mostarFormulario}
                 style={{ background: 'var(--tercero)' }}>
-                <AddIcon style={{ color: 'var(--primer)' }} />
+                <AddIcon style={{ color: 'var(--primer)', fontSize: '1rem' }} />
               </IconButton>
-            </li>
-          </ul>
-        </div>
+            </div>
+          )}
+
+        </section >
+
+
 
         <table className="tabla-items">
+          <thead>
+            <tr>
+              <th className="a1">Bodega</th>
+              <th className="a1">Nombre</th>
+              <th className="a1">Referencia</th>
+              <th className="a1">Descripcion</th>
+              <th className="a1">Precio</th>
+              <th className="a1">Stock</th>
+              <th className="a1"></th>
+              <th className="a1"></th>
+            </tr>
+          </thead>
           <tbody>
-            {productos
+            {productosMostrados
               .filter((producto) =>
                 producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                producto.proveedor.toLowerCase().includes(busqueda.toLowerCase()) ||
                 producto.bodega.toLowerCase().includes(busqueda.toLowerCase()) ||
                 producto.referencia.toLowerCase().includes(busqueda.toLowerCase())
               )
@@ -474,7 +578,7 @@ const Productos = () => {
                 <tr className="fila" key={index}>
                   <td className="a1">
                     <div className="centered-content">
-                      <LocationOnIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
+                      <LocationOnIcon style={{ color: '#949393', fontSize: '2rem' }} />
                       {producto.bodega}
                     </div>
                   </td>
@@ -482,108 +586,155 @@ const Productos = () => {
 
                   <td className="a2">
                     <div className="centered-content">
-                      <Inventory2OutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
+                      <Inventory2OutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
                       {capitalizeWords(producto.nombre)}
                     </div>
                   </td>
 
-                  <td className="a1">
+                  <td className="a2">
                     <div className="centered-content">
-                      <QrCodeIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
+                      <QrCodeIcon style={{ color: '#949393', fontSize: '2rem' }} />
                       {capitalizeWords(producto.referencia)}
                     </div>
                   </td>
 
                   <td className="a1">
                     <div className="centered-content">
-                      <DescriptionIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
+                      <DescriptionIcon style={{ color: '#949393', fontSize: '2rem' }} />
                       {capitalizeWords(producto.descripcion)}
                     </div>
                   </td>
 
 
-                  <td className="a1">
+                  <td className="a2">
                     <div className="centered-content">
-                      <PriceCheckOutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
+                      <PriceCheckOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
                       {producto.precio_venta}
                     </div>
                   </td>
-
                   <td
-                    className={producto.cantidad === 0 ? 'agotado' : 'a1 actualizarStock'}
+                    className={producto.cantidad === 0 ? 'agotado' : userRole === 'vendedor' ? '' : 'a1'}
                   >
                     <div
-                      onClick={() => mostrarFormularioStock(producto.id_producto)}
+
                       className="centered-content">
-                      <InventoryOutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                      <strong>   {producto.cantidad === 0 ? 'Agotado' : producto.cantidad} Uds</strong>
+                      <InventoryOutlinedIcon style={{ color: '#949393', fontSize: '2rem' }} />
+                      <strong>{producto.cantidad}
+                      </strong>
                     </div>
-                    {formStock === producto.id_producto && (
-                      <div className="formStock">
-                        <label>Insertar Cantidad</label>
-                        <TextField
-                          type="number"
-                          value={nuevaCantidad}
-                          onChange={handleNuevoStock}
-                        />
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
-                          onClick={() => actualizarCantidad(producto.id_producto, nuevaCantidad)}
-                        >
-                          Listo
-                        </Button>
 
+                  </td>
+
+
+                  {/* codigo para actualiza stock */}
+                  {(userRole !== 'vendedor') && (
+
+                    <td className="actualizarStock">
+                      <div className="centered-content">
+                        <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'restar')}>
+                          <HorizontalRuleIcon />
+                        </IconButton>
+                        <IconButton onClick={() => mostrarFormularioStock(producto.id_producto, 'sumar')}>
+                          <AddIcon />
+                        </IconButton>
+                        {formStock === producto.id_producto && (
+                          <div className="formStock">
+                            <label>Insertar Cantidad</label>
+                            <TextField
+                              value={nuevaCantidad}
+                              onChange={handleNuevoStock}
+                            />
+                            <div className="check">
+                              <IconButton
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={() => actualizarCantidad(producto.id_producto, nuevaCantidad, operacion)}
+
+                              >
+                                <CheckIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+
+                                color="secondary"
+                                onClick={ocultarFormularioStock}
+                                variant="outlined"
+                              >
+                                <ClearIcon />
+                              </IconButton>
+                            </div>
+
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </td>
+                    </td>
 
-                  <td className="estado a1">
-                    <Switch
-                      size="small"
-                      checked={!!producto.estado}
-                      color="success"
-                      onChange={() => toggleEstado(producto.id_producto, !producto.estado)}
-                    />
-                  </td>
-                  <td className="a10">
-                    <div className="centered-content">
-                      <IconButton onClick={() => setSubMenu(producto.id_producto)}>
-                        <MoreVertIcon />
-                      </IconButton>
-                      {subMenu === producto.id_producto && (
-                        <div className="sub_menu" onMouseLeave={ocultarSubMenu}>
-                          <div onClick={() => obtenerProductoPorId(producto.id_producto)}>
-                            <IconButton size="small" color="success">
-                              <InfoIcon />
-                            </IconButton>
-                            <span>Detalles</span>
-                          </div>
+                  )}
 
-                          <div onClick={() => activarModoEdicion(producto)}>
-                            <IconButton size="small" color="primary">
-                              <EditIcon />
-                            </IconButton>
-                            <span>Editar</span>
-                          </div>
 
-                          <div onClick={() => eliminarProducto(producto.id_producto, producto.nombre)}>
-                            <IconButton size="small" color="error">
-                              <DeleteIcon />
-                            </IconButton>
-                            <span>Eliminar</span>
+                  {(userRole === 'administrador') && (
+                    <td className="a10">
+                      <div className="centered-content">
+                        <IconButton onClick={() => setSubMenu(producto.id_producto)}>
+                          <MoreVertIcon />
+                        </IconButton>
+                        {subMenu === producto.id_producto && (
+                          <div className="sub_menu" onMouseLeave={ocultarSubMenu}>
+
+                            <div onClick={() => obtenerProductoPorId(producto.id_producto)}>
+                              <IconButton size="small" color="success">
+                                <InfoIcon />
+                              </IconButton>
+                              <span>Detalles</span>
+                            </div>
+
+                            <div onClick={() => activarModoEdicion(producto)}>
+                              <IconButton size="small" color="primary">
+                                <EditIcon />
+                              </IconButton>
+                              <span>Editar</span>
+                            </div>
+
+                            <div onClick={() => eliminarProducto(producto.id_producto, producto.nombre)}>
+                              <IconButton size="small" color="error">
+                                <DeleteIcon />
+                              </IconButton>
+                              <span>Eliminar</span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
+                        )}
+                      </div>
+                    </td>
+                  )}
+
+
 
                 </tr>
               ))}
           </tbody>
         </table>
 
+        {/* Paginación */}
+        <div className="paginacion">
+          <Button
+            onClick={() => cambiarPagina(paginaActual - 1)}
+            disabled={paginaActual === 1}
+            variant="outlined"
+            size="small"
+          >
+            Anterior
+          </Button>
+          <span>{`Página ${paginaActual} de ${totalPaginas}`}</span>
+          <Button
+            variant="outlined"
+            onClick={() => cambiarPagina(paginaActual + 1)}
+            disabled={paginaActual === totalPaginas}
+            size="small"
+          >
+            Siguiente
+          </Button>
+        </div>
 
         <Modal
           open={formulario}
@@ -630,15 +781,7 @@ const Productos = () => {
                   value={formData.descripcion}
                   required
                 />
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Precio de Compra"
-                  name="precio_compra"
-                  onChange={cambiosInputs}
-                  value={formData.precio_compra}
-                  required
-                />
+
                 <TextField
                   type="number"
                   fullWidth
@@ -664,44 +807,6 @@ const Productos = () => {
                     ))}
                   </Select>
                 </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel id="proveedor-label">Proveedor</InputLabel>
-                  <Select
-                    labelId="proveedor-label"
-                    name="proveedor"
-                    value={formData.proveedor}
-                    onChange={cambiosInputs}
-                    required
-                  >
-                    {proveedores.map((proveedor) => (
-                      <MenuItem key={proveedor.id_proveedor} value={proveedor.id_proveedor}>
-                        {proveedor.empresa}
-                      </MenuItem>
-
-                    ))}
-
-                  </Select>
-
-                </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel id="estado-label">Estado</InputLabel>
-                  <Select
-                    labelId="estado-label"
-                    name="estado"
-                    value={formData.estado}
-                    onChange={cambiosInputs}
-                    required
-                  >
-                    <MenuItem value={1}>Activo</MenuItem>
-                    <MenuItem value={0}>Inactivo</MenuItem>
-                  </Select>
-                </FormControl>
-
-
-
-
-
-
 
               </div>
 
@@ -741,13 +846,7 @@ const Productos = () => {
                 </div>
                 <div className="contenedor-detalles">
 
-                  <div className="detalle_item">
-                    <DescriptionIcon style={{ color: '#949393', fontSize: '3rem' }} />
-                    <div className="centered-content-detalle">
-                      <strong className="detalle_titulo">Proveedor</strong>
-                      <span className="detalle_valor">{detalleProducto.proveedor}</span>
-                    </div>
-                  </div>
+
                   <div className="detalle_item">
                     <LocationOnIcon style={{ color: '#949393', fontSize: '3rem' }} />
                     <div className="centered-content-detalle">
@@ -777,16 +876,6 @@ const Productos = () => {
                     </div>
                   </div>
 
-                  {usuario.cargo === "administrador" && (
-                    <div className="detalle_item">
-                      <AttachMoneyIcon style={{ color: '#949393', fontSize: '3rem' }} />
-                      <div className="centered-content-detalle">
-                        <strong className="detalle_titulo">Precio de Compra</strong>
-                        <span className="detalle_valor">{detalleProducto.precio_compra}</span>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="detalle_item">
                     <PriceCheckOutlinedIcon style={{ color: '#949393', fontSize: '3rem' }} />
                     <div className="centered-content-detalle">
@@ -801,13 +890,7 @@ const Productos = () => {
                       <span className="detalle_valor">{detalleProducto.cantidad}</span>
                     </div>
                   </div>
-                  <div className="detalle_item">
-                    <LocationOnIcon style={{ color: '#949393', fontSize: '3rem' }} />
-                    <div className="centered-content-detalle">
-                      <strong className="detalle_titulo">Estado</strong>
-                      <span className="detalle_valor">{mostrarEstadoTexto(detalleProducto.estado)}</span>
-                    </div>
-                  </div>
+
 
                 </div>
               </div>
@@ -817,6 +900,10 @@ const Productos = () => {
       </section>
     </>
   );
+};
+
+Productos.propTypes = {
+  userRole: PropTypes.string.isRequired,
 };
 
 export default Productos;

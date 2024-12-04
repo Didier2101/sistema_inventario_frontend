@@ -1,13 +1,16 @@
 .encabezado-header {
   width: 100%;
-  padding: 10px 8px;
-  background-color: rgba(255, 255, 255, 0.685);
+  padding: 10px 10px;
+  background-color: rgba(235, 240, 244, 0.8); /* color con transparencia */
   position: sticky;
   top: 0;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(3px) contrast(0.8) saturate(1.2);
   z-index: 1;
-  /* box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1); */
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  filter: opacity(0.9) brightness(1.1); /* ajuste para dar un toque de textura */
 }
+
 .encabezado-header .header {
   display: flex;
   align-items: center;
@@ -16,49 +19,5 @@
 .encabezado-header .iconos-izquierda {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.encabezado-header .iconos-izquierda .icono-menu {
-  color: var(--tercero);
-  font-size: 2rem;
-  transition: color 0.2s ease-in;
-}
-.encabezado-header .iconos-izquierda .icono-menu:hover,
-.encabezado-header .iconos-derecha .icono:hover {
-  color: var(--segundo);
-}
-.encabezado-header .iconos-izquierda .icono-usuario {
-  color: var(--tercero);
-  font-size: 2.4rem;
-  transition: color 0.2s ease-in;
-}
-
-.iconos-derecha {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.encabezado-header .iconos-derecha .icono {
-  font-size: 1.6rem;
-  color: var(--tercero);
-  transition: color 0.2s ease-in;
-}
-
-.contenedor-icono-alerta {
-  position: relative;
-}
-.alerta-correo,
-.alerta-notificaciones {
-  position: absolute;
-  top: -5px; /* Ajusta la posición vertical */
-  right: -5px; /* Ajusta la posición horizontal */
-  background-color: var(--quinto); /* Color de fondo de la alerta */
-  border-radius: 50%; /* Forma de círculo */
-  width: 12px; /* Ancho */
-  height: 12px; /* Altura */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  color: var(--tercero);
+  gap: 6px;
 }

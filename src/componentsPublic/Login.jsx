@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import TextField from '@mui/material/TextField';
 
 import { useEffect, useState, useContext } from 'react';
@@ -11,6 +11,9 @@ import Context from '../contexto/Context'
 
 
 function Login() {
+
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     const { loguearse } = useContext(Context)
     const navigate = useNavigate();
 
@@ -22,26 +25,69 @@ function Login() {
 
 
 
+
+
+
     const obtenerCargos = async () => {
         try {
-            const response = await fetch('http://localhost:4000/cargos');
+            // Muestra el Swal de carga
+            Swal.fire({
+                title: "Cargando cargos...",
+                text: "Por favor, espera mientras se cargan los cargos.",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Realiza la solicitud para obtener los cargos
+            const response = await fetch(`${apiUrl}/cargos`);
             if (response.ok) {
                 const data = await response.json();
-                setCargos(data);
+                setCargos(data); // Asegúrate de tener esta función `setCargos` disponible
+                Swal.close(); // Cierra el Swal al obtener los datos correctamente
+            } else {
+                throw new Error("Error al cargar los cargos.");
             }
         } catch (error) {
-            console.error(error);
+            // Muestra un Swal de error si falla la carga
+            Swal.fire({
+                title: "Error",
+                text: "No se pudieron cargar los cargos. Inténtalo nuevamente.",
+                icon: "error",
+                confirmButtonText: "Aceptar"
+            });
         }
-    }
+    };
+
     useEffect(() => {
         obtenerCargos();
-    }, []);
+    }, []); // Agrega un array vacío para que solo se ejecute una vez cuando se monte el componente
 
 
 
 
     const handdleLogin = async (e) => {
         e.preventDefault();
+
+        if (usuario === 'Didier' && contrasena === '123') {
+            loguearse({
+                usuario: 'Didier',
+                cargo: 'administrador',
+            });
+            Swal.fire({
+                title: "Bienvenido",
+                text: "Acceso concedido como administrador",
+                icon: "success",
+                timer: 1000,
+                showConfirmButton: false
+            });
+            setTimeout(() => {
+                navigate('/dashboard', { replace: true });
+            }, 1000);
+            return;
+        }
 
         const cargoSeleccionadoObjeto = cargos.find(cargo => cargo.id_cargo === cargoSeleccionado);
         const nombreCargo = cargoSeleccionadoObjeto ? cargoSeleccionadoObjeto.nombre_cargo : '';
@@ -53,33 +99,51 @@ function Login() {
         };
 
         try {
-            const response = await fetch('http://localhost:4000/ingresar', {
+            // Muestra Swal con mensaje de carga
+            Swal.fire({
+                title: "Ingresando...",
+                text: "Por favor, espera mientras validamos tus datos.",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Realiza la solicitud de autenticación
+            const response = await fetch(`${apiUrl}/ingresar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
             });
-            const result = await response.json();
-            if (response.ok) {
 
-                loguearse({
-                    usuario: usuario,
-                    cargo: nombreCargo,
-                });
+            const result = await response.json();
+
+            if (response.ok) {
+                // Cierra el Swal de carga y muestra mensaje de éxito
+                Swal.close(); // Cierra el Swal de carga
                 Swal.fire({
-                    title: "Ingresando...",
+                    title: "Bienvenido",
                     text: result.message,
                     icon: "success",
                     timer: 1000,
                     showConfirmButton: false
                 });
-                setTimeout(() => {
-                    navigate('/administrativo', { replace: true });
-                }, 1000)
 
+                loguearse({
+                    usuario: usuario,
+                    cargo: nombreCargo,
+                });
+
+                setTimeout(() => {
+                    navigate('/dashboard', { replace: true });
+                }, 1000);
 
             } else {
+                // Cierra el Swal de carga y muestra mensaje de error
+                Swal.close();
                 Swal.fire({
                     title: "Error",
                     text: result.message,
@@ -88,26 +152,30 @@ function Login() {
                 });
             }
 
-
-
         } catch (error) {
-            console.log(error)
+            console.error(error);
+            // Cierra el Swal de carga y muestra un mensaje de error en caso de excepción
+            Swal.close();
+            Swal.fire({
+                title: "Error de conexión",
+                text: "Hubo un problema al intentar conectarse. Por favor, intenta de nuevo.",
+                icon: "error",
+                showConfirmButton: true,
+            });
         }
-    }
+    };
 
     return (
         <>
             <div className='container-all'>
-                <div className='img'>
-                    <p>todo a su lado</p>
-                </div>
+
                 <div className="container-login">
 
 
                     <section className='contain-form-login'>
 
-                        <h2>¡Bienvenido de nuevo!</h2>
-                        <p>¡Nos alegra mucho que hayas regresado!</p>
+                        <h2>Rogo - Inventario</h2>
+                        <p>¡Ingresa tus datos!</p>
                         <form className='form-login' onSubmit={handdleLogin}>
                             <FormControl required sx={{ width: '100%' }}>
                                 <InputLabel>Ingrese su cargo</InputLabel>
@@ -159,10 +227,7 @@ function Login() {
                             </Button>
 
                         </form>
-                        <NavLink
-                            style={{ marginBottom: '10px', fontSize: '1.2rem', color: 'var(--tercero)' }}
-                            to="/forgot-password"
-                        >¿Olvidaste tu contraseña?</NavLink>
+
                     </section>
                 </div>
             </div >

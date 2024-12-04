@@ -16,6 +16,9 @@ import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const PuntosVenta = () => {
+
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [puntoVentaID, setPuntoVentaID] = useState(null);
   const [modoEditar, setModoEditar] = useState(false);
   const [detallePuntoVenta, setDetallePuntoVenta] = useState(null)
@@ -53,21 +56,57 @@ const PuntosVenta = () => {
 
   const obtenerPuntosVentas = async () => {
     try {
-      const response = await fetch("http://localhost:4000/puntos_ventas");
+      // Mostrar mensaje de carga
+      Swal.fire({
+        title: "Cargando puntos de venta...",
+        text: "Por favor, espera mientras se cargan los puntos de venta.",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await fetch(`${apiUrl}/puntos_ventas`);
       if (response.ok) {
         const data_ventas = await response.json();
         setPuntosVentas(data_ventas);
+
+        // Cerrar el mensaje de carga y mostrar mensaje de éxito
+        Swal.close();
+        Swal.fire({
+          title: 'Éxito',
+          text: 'Los puntos de venta se han cargado correctamente.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
       } else {
-        console.error("No se pudo obtener los puntos de venta");
+        // Cerrar el mensaje de carga y mostrar mensaje de error
+        Swal.close();
+        Swal.fire({
+          title: 'Error al Cargar Puntos de Venta',
+          text: 'No se pudo obtener la lista de puntos de venta. Intenta nuevamente.',
+          icon: 'error',
+          showConfirmButton: true
+        });
       }
     } catch (error) {
-      console.error('error al obtener los puntos de venta', error);
+      // Cerrar el mensaje de carga y mostrar mensaje de error de conexión
+      Swal.close();
+      Swal.fire({
+        title: 'Error de Conexión',
+        text: 'Hubo un problema al intentar obtener los puntos de venta. Por favor, intenta nuevamente.',
+        icon: 'error',
+        showConfirmButton: true
+      });
     }
   };
 
+
   const obtenerEmpleados = async () => {
     try {
-      const response = await fetch("http://localhost:4000/empleados");
+      const response = await fetch(`${apiUrl}/empleados`);
       if (response.ok) {
         const data_empleados = await response.json();
         setEmpleados(data_empleados);
@@ -80,8 +119,8 @@ const PuntosVenta = () => {
   };
 
   useEffect(() => {
-    obtenerPuntosVentas();
     obtenerEmpleados();
+    obtenerPuntosVentas()
   }, []);
 
 
@@ -90,7 +129,7 @@ const PuntosVenta = () => {
     e.preventDefault();
 
     try {
-      let url = 'http://localhost:4000/puntos_ventas';
+      let url = `${apiUrl}/puntos_ventas`;
       let method = 'POST';
       if (modoEditar) {
         url += `/${puntoVentaID}`;
@@ -145,7 +184,7 @@ const PuntosVenta = () => {
 
   const obtenerPuntoVentaPorId = async (idPuntoVenta) => {
     try {
-      const response = await fetch(`http://localhost:4000/puntos_ventas/${idPuntoVenta}`);
+      const response = await fetch(`${apiUrl}/puntos_ventas/${idPuntoVenta}`);
       if (response.ok) {
         const data = await response.json();
         const encargado = empleados.find(emp => emp.id_empleado === data.encargado);
@@ -171,7 +210,7 @@ const PuntosVenta = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await fetch(`http://localhost:4000/puntos_ventas/${puntoVentaId}`, {
+        const response = await fetch(`${apiUrl}/puntos_ventas/${puntoVentaId}`, {
           method: 'DELETE',
         });
 
@@ -272,23 +311,32 @@ const PuntosVenta = () => {
 
   return (
     <section className="section-item">
-      <section className="witches">
-        <ul className="witches-list">
-          <li className="witches-item">
-            <span className="cantidad-empleados">{puntosVentas.length}</span>
-            Lista de los puntos de venta
-          </li>
-          <li>
-            <IconButton
-              onClick={mostarFormulario}
-              style={{ background: 'var(--tercero)' }}>
-              <AddIcon style={{ color: 'var(--primer)' }} />
-            </IconButton>
-          </li>
-        </ul>
-      </section>
+      <div className=" contenedor_buscar">
+        <div className="witches">
+          <ul className="witches-list ">
+            <li className="witches-item">
+              <span className="cantidad-empleados">{puntosVentas.length}</span>
+              Lista de los puntos de venta
+
+            </li>
+
+          </ul>
+        </div>
+        <IconButton
+          onClick={mostarFormulario}
+          style={{ background: 'var(--tercero)' }}>
+          <AddIcon style={{ color: 'var(--primer)' }} />
+        </IconButton>
+      </div>
 
       <table className="tabla-items">
+        <thead>
+          <tr>
+            <th className="a1">Nombre del punto de venta</th>
+            <th className="a1">Telefono y direccion</th>
+            <th className="a1">Encargado</th>
+          </tr>
+        </thead>
         <tbody>
           {puntosVentas.map((puntoVenta, index) => (
             <tr className="fila" key={index}>

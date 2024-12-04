@@ -22,6 +22,7 @@ import Context from "../contexto/Context";
 
 
 const Clientes = () => {
+  const apiUrl = import.meta.env.VITE_API_URL;
   const { usuario } = useContext(Context);
   const [clienteID, setClienteID] = useState(null);
   const [modoEditar, setModoEditar] = useState(false);
@@ -39,7 +40,7 @@ const Clientes = () => {
   const [telefonoError, setTelefonoError] = useState(false);
   const [nombresError, setNombresError] = useState(false);
   const [correoError, setCorreoError] = useState(false);
-  const [formularioValido, setFormularioValido] = useState(false);
+
 
   const activarModoEdicion = (cliente) => {
     setModoEditar(true);
@@ -90,15 +91,11 @@ const Clientes = () => {
       default:
         break;
     }
-    // Verificar si todos los campos obligatorios están llenos y no hay errores
-    const camposLlenos = Object.values(formData).every(val => val !== '');
-    const noHayErrores = !(cedulaError || telefonoError || nombresError || correoError);
-    setFormularioValido(camposLlenos && noHayErrores);
   };
 
   const obtenerClientes = async () => {
     try {
-      const response = await fetch("http://localhost:4000/clientes");
+      const response = await fetch(`${apiUrl}/clientes`);
       if (response.ok) {
         const data = await response.json();
         setClientes(data);
@@ -111,7 +108,7 @@ const Clientes = () => {
   }
   useEffect(() => {
     obtenerClientes();
-  }, []);
+  });
 
 
 
@@ -125,7 +122,6 @@ const Clientes = () => {
       telefonoError ||
       nombresError ||
       correoError ||
-      !formData.empresa ||
       !formData.cedula ||
       !formData.nombres ||
       !formData.correo_electronico ||
@@ -136,7 +132,7 @@ const Clientes = () => {
     }
 
     try {
-      let url = 'http://localhost:4000/clientes';
+      let url = `${apiUrl}/clientes`;
       let method = 'POST';
       if (modoEditar) {
         url += `/${clienteID}`;
@@ -201,7 +197,7 @@ const Clientes = () => {
 
   const obtenerClientePorId = async (idCliente) => {
     try {
-      const response = await fetch(`http://localhost:4000/clientes/${idCliente}`);
+      const response = await fetch(`${apiUrl}/clientes/${idCliente}`);
       if (response.ok) {
         const data = await response.json();
         setDetalleCliente(data);
@@ -236,7 +232,7 @@ const Clientes = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await fetch(`http://localhost:4000/clientes/${clienteId}`, {
+        const response = await fetch(`${apiUrl}/clientes/${clienteId}`, {
           method: 'DELETE',
         });
 
@@ -292,6 +288,7 @@ const Clientes = () => {
     width: 1100,
     height: 'auto', // Establece una altura específica para permitir el desplazamiento
     bgcolor: 'background.paper',
+    borderRadius: '10px',
     pt: 2,
     px: 4,
     pb: 3,
@@ -346,24 +343,33 @@ const Clientes = () => {
 
 
 
-      <div className="witches">
-        <ul className="witches-list">
-          <li className="witches-item">
-            <span className="cantidad-clientes">{clientes.length}</span>
-            Lista de clientes
-          </li>
-          <li>
-            <IconButton
-              onClick={mostarFormulario}
-              style={{ background: 'var(--tercero)' }}>
-              <AddIcon style={{ color: 'var(--primer)' }} />
-            </IconButton>
-          </li>
-        </ul>
+      <div className=" contenedor_buscar">
+        <div className="witches">
+          <ul className="witches-list ">
+            <li className="witches-item">
+              <span className="cantidad-empleados">{clientes.length}</span>
+              Lista de Clientes
+            </li>
+
+          </ul>
+        </div>
+        <IconButton
+          onClick={mostarFormulario}
+          style={{ background: 'var(--tercero)' }}>
+          <AddIcon style={{ color: 'var(--primer)' }} />
+        </IconButton>
       </div>
 
 
       <table className="tabla-items">
+        <thead>
+          <tr>
+            <th className="a1">Nombre del punto de venta</th>
+            <th className="a1">Cedula</th>
+            <th className="a1">Telefono y direccion</th>
+            <th className="a1">Email</th>
+          </tr>
+        </thead>
         <tbody>
           {clientes.map((cliente, index) => (
             <tr className="fila" key={index}>
@@ -508,7 +514,6 @@ const Clientes = () => {
                 variant="contained"
                 color="success"
                 type="submit"
-                disabled={!formularioValido}
               > {modoEditar ? 'Guardar cambios' : 'Agregar Cliente'}
               </Button>
             </div>

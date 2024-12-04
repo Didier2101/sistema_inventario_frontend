@@ -35,8 +35,6 @@ const Provider = ({ children }) => {
             payload: usuario,
         };
         localStorage.setItem('valor', JSON.stringify(usuario));
-        console.log('este es erl usuario en el provider', usuario.usuario);
-        console.log('este es erl cargo en el provider', usuario.cargo);
         dispatch(action);
     };
 

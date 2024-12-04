@@ -3,7 +3,7 @@
 const Footer = () => {
     return (
         <div className="footer">
-            <p>Proyecto creado por !BUG Colombia</p>
+            <p>Proyecto sistema de inventario creado por !BUG Colombia</p>
         </div>
     )
 }

@@ -24,7 +24,7 @@ const NotFound = () => {
                     }}
 
                 >
-                    volver
+                    volver a ingresar a la página
                 </Button>
             </NavLink>
         </div>

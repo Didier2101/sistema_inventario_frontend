@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
+    "dev": "vite",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -19,6 +19,7 @@
     "@mui/x-date-pickers": "^7.10.0",
     "axios": "^1.6.8",
     "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
     "google-maps": "^4.3.3",
     "jwt-decode": "^4.0.0",
     "prop-types": "^15.8.1",

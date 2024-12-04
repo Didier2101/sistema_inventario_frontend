@@ -2,7 +2,6 @@
 @import url("./css/login.css");
 @import url("./css/menu.css");
 @import url("./css/header.css");
-@import url("./css/inicio.css");
 @import url("./css/global.css");
 
 * {
@@ -14,12 +13,9 @@ html,
 body {
   font-family: "Montserrat", sans-serif;
   font-size: 68.5%;
-  background-color: #fff;
+  background-color: #ebf0f4;
 }
 
-img {
-  width: 100%;
-}
 .flex-1 {
   display: flex;
 }
@@ -62,20 +58,6 @@ img {
   width: 6px;
   background-color: #b9b9b9; /* Color del thumb (la parte movible) */
   border-radius: 5px; /* Radio de borde del thumb */
-}
-
-.not-found-container {
-  background-image: url("../public/character_6.png");
-  background-repeat: no-repeat;
-  background-position: left;
-  display: flex;
-  width: 50%;
-  margin: 0 auto;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  text-align: center;
 }
 
 .not-found-title {

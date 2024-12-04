@@ -1,24 +1,17 @@
 import PropTypes from 'prop-types';
 import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
 import { IconButton } from "@mui/material";
-// import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import Context from '../contexto/Context';
 
-
-
-const Header = ({ onMenuToggle }) => {
-    const navigate = useNavigate()
-
-    const { desloguearse, usuario } = useContext(Context)
-    JSON.parse(localStorage.getItem('valor'));
-
+const Header = ({ onMenuToggle, userRole }) => {
+    const navigate = useNavigate();
+    const { desloguearse, usuario } = useContext(Context);
 
     const CerrarSesion = () => {
-
         Swal.fire({
             title: '¿Estás seguro?',
             text: '¿Realmente quieres cerrar sesión?',
@@ -34,31 +27,37 @@ const Header = ({ onMenuToggle }) => {
                 navigate("/", { replace: true });
             }
         });
-    }
+    };
 
     return (
         <div className='encabezado-header'>
             <header className="header">
                 <div className="iconos-izquierda">
-                    <ViewListIcon className='icono-menu' onClick={onMenuToggle} />
-                    {/* <AccountCircleIcon className='icono-usuario' /> */}
-                    <h2>Estas como: <span>{usuario ? usuario.usuario : 'Invitado'}</span></h2>
+                    {(userRole === 'administrador') && (
+                        <IconButton onClick={onMenuToggle}>
+                            <MenuIcon sx={{ color: 'var(--tercero)', fontSize: '2rem' }} />
+                        </IconButton>
+                    )}
+                    <h2>
+                        <span style={{ textTransform: 'uppercase' }}>
+                            {usuario.cargo} : {usuario.usuario}
+                        </span>
+                    </h2>
                 </div>
-                <div className='iconos-derecha'>
-                    <IconButton
-                        onClick={CerrarSesion}
-                        variant="outlined">
-                        <LogoutIcon />
-                    </IconButton>
-                </div>
+
+                <IconButton onClick={CerrarSesion}>
+                    <LogoutIcon />
+                </IconButton>
+
             </header>
         </div>
+    );
+};
 
-    )
-}
 // Agregar validación de prop-types
 Header.propTypes = {
     onMenuToggle: PropTypes.func.isRequired,
+    userRole: PropTypes.string.isRequired,
 };
 
-export default Header
+export default Header;

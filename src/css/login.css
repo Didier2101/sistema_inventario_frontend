@@ -1,7 +1,5 @@
 .container-all {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100vh;
+  width: 100%;
 }
 
 .container-login {
@@ -13,6 +11,7 @@
 
 /*  codigo formulario login */
 .contain-form-login {
+  height: 100vh;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -46,12 +45,6 @@
 }
 .label input[type="checkbox"] {
   margin-right: 4px; /* Ajusta el margen derecho según sea necesario */
-}
-
-.img {
-  background-image: url("../../public/4799410.jpg");
-  background-position: center;
-  background-size: cover;
 }
 
 @media (max-width: 768px) {

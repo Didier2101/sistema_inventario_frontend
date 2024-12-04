@@ -1,3 +1,5 @@
+
+
 import { Box, Button, IconButton, Modal, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -20,6 +22,8 @@ import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import LocalPostOfficeOutlinedIcon from '@mui/icons-material/LocalPostOfficeOutlined';
 
 const Empleados = () => {
+
+  const apiUrl = import.meta.env.VITE_API_URL;
 
 
   // Agrega un nuevo estado para almacenar el ID del empleado seleccionado para editar
@@ -47,7 +51,7 @@ const Empleados = () => {
   const [telefonoError, setTelefonoError] = useState(false);
   const [nombresError, setNombresError] = useState(false);
   const [correoError, setCorreoError] = useState(false);
-  const [formularioValido, setFormularioValido] = useState(false);
+
 
   const formatearFecha = (fechaISO) => {
     const fecha = new Date(fechaISO);
@@ -126,38 +130,68 @@ const Empleados = () => {
       default:
         break;
     }
-    // Verificar si todos los campos obligatorios están llenos y no hay errores
-    const camposLlenos = Object.values(formularioInformacion).every(val => val !== '');
-    const noHayErrores = !(cedulaError || salarioError || telefonoError || nombresError || correoError);
-    setFormularioValido(camposLlenos && noHayErrores);
+
+
   };
 
   const obtenerEmpleados = async () => {
     try {
-      const response = await fetch("http://localhost:4000/empleados");
+      // Mostrar mensaje de carga
+      Swal.fire({
+        title: "Cargando empleados...",
+        text: "Por favor, espera mientras se cargan los empleados.",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await fetch(`${apiUrl}/empleados`);
       if (response.ok) {
         const data = await response.json();
-        setEmpleados(data.map(empleado => ({
+
+        // Formatear las fechas de los empleados
+        const empleadosFormateados = data.map(empleado => ({
           ...empleado,
           fecha_ingreso: formatearFecha(empleado.fecha_ingreso),
           fecha_nacimiento: formatearFecha(empleado.fecha_nacimiento),
-        })));
+        }));
+
+        // Asignar los empleados al estado
+        setEmpleados(empleadosFormateados);
+
+        // Cerrar el mensaje de carga
+        Swal.close();
       } else {
-        console.error("Error al obtener los empleados");
+        // Cerrar el mensaje de carga y mostrar error
+        Swal.close();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo obtener los empleados. Inténtalo de nuevo.",
+        });
       }
     } catch (error) {
-      console.error("Error al obtener empleados:", error);
+      // Cerrar el mensaje de carga en caso de error
+      Swal.close();
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Ocurrió un error al intentar obtener los empleados.",
+      });
     }
   };
 
   useEffect(() => {
     obtenerEmpleados();
-  });
+  }, []);
 
 
   const obtenerEmpleadoPorId = async (idEmpleado) => {
     try {
-      const response = await fetch(`http://localhost:4000/empleados/${idEmpleado}`);
+      const response = await fetch(`${apiUrl}/empleados/${idEmpleado}`);
       const data = await response.json();
 
       const empleadoFormateado = {
@@ -191,7 +225,7 @@ const Empleados = () => {
 
 
     try {
-      let url = 'http://localhost:4000/empleados';
+      let url = `${apiUrl}/empleados`;
       let method = 'POST';
       if (modoEditar) {
         url += `/${empleadoID}`;
@@ -271,7 +305,7 @@ const Empleados = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await fetch(`http://localhost:4000/empleados/${empleadoId}`, {
+        const response = await fetch(`${apiUrl}/empleados/${empleadoId}`, {
           method: 'DELETE',
         });
 
@@ -335,6 +369,9 @@ const Empleados = () => {
     width: 1100,
     height: 'auto', // Establece una altura específica para permitir el desplazamiento
     bgcolor: 'background.paper',
+
+    borderRadius: '10px',
+
     pt: 2,
     px: 4,
     pb: 3,
@@ -387,20 +424,21 @@ const Empleados = () => {
 
   return (
     <section className="section-item">
-      <div className="witches">
-        <ul className="witches-list">
-          <li className="witches-item">
-            <span className="cantidad-empleados">{empleados.length}</span>
-            Lista de empleados
-          </li>
-          <li>
-            <IconButton
-              onClick={mostarFormulario}
-              style={{ background: 'var(--tercero)' }}>
-              <AddIcon style={{ color: 'var(--primer)' }} />
-            </IconButton>
-          </li>
-        </ul>
+      <div className=" contenedor_buscar">
+        <div className="witches">
+          <ul className="witches-list ">
+            <li className="witches-item">
+              <span className="cantidad-empleados">{empleados.length}</span>
+              Lista de empleados
+            </li>
+
+          </ul>
+        </div>
+        <IconButton
+          onClick={mostarFormulario}
+          style={{ background: 'var(--tercero)' }}>
+          <AddIcon style={{ color: 'var(--primer)' }} />
+        </IconButton>
       </div>
 
       <table className="tabla-items">
@@ -564,7 +602,6 @@ const Empleados = () => {
                 <option value="1">Administrador</option>
                 <option value="2">Bodeguero</option>
                 <option value="3">Vendedor</option>
-                <option value="4">Auxiliar</option>
               </select>
 
 
@@ -638,7 +675,7 @@ const Empleados = () => {
                 variant="contained"
                 color="success"
                 type="submit"
-                disabled={!formularioValido}
+
               >
                 {modoEditar ? 'Guardar cambios' : 'Agregar empleado'}
               </Button>

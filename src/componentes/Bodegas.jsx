@@ -1,5 +1,4 @@
-import DescriptionIcon from '@mui/icons-material/Description';
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import InfoIcon from "@mui/icons-material/Info";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -11,21 +10,18 @@ import PersonOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import PlaceIcon from '@mui/icons-material/Place';
 import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined';
-import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
-import QrCodeIcon from '@mui/icons-material/QrCode';
 
 
+// aqui esta tu codigo
 
-
-import { Box, Button, IconButton, Modal, TextField, Select, MenuItem, FormControl, InputLabel, InputBase } from "@mui/material";
+import { Box, Button, IconButton, Modal, TextField, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 const Bodegas = () => {
-  const [busqueda, setBusqueda] = useState('');
-  const [productosCount, setProductosCount] = useState({});
-  const [modalProductos, setModalProductos] = useState(false)
-  const [listaProductos, setListaProductos] = useState([]);
+
+  const apiUrl = import.meta.env.VITE_API_URL;
+
   const [bodegaID, setBodegaID] = useState(null);
   const [modoEditar, setModoEditar] = useState(false);
   const [detalleBodega, setDetalleBodega] = useState(null)
@@ -45,8 +41,6 @@ const Bodegas = () => {
     obtenerEmpleados();
   }, []);
 
-
-
   const activarModoEdicion = (bodega) => {
     setModoEditar(true);
     setFormulario(true);
@@ -63,8 +57,6 @@ const Bodegas = () => {
     setBodegaID(bodega.id_bodega);
   };
 
-
-
   const cambiosInputs = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -72,41 +64,63 @@ const Bodegas = () => {
 
   const obtenerBodegas = async () => {
     try {
-      const response = await fetch("http://localhost:4000/bodegas");
+      // Mostrar mensaje de carga
+      Swal.fire({
+        title: "Cargando bodegas...",
+        text: "Por favor, espera mientras se cargan las bodegas.",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await fetch(`${apiUrl}/bodegas`);
       if (response.ok) {
         const data_bodegas = await response.json();
         setBodegas(data_bodegas);
-        // Obtener productos para cada bodega
-        const counts = {};
-        for (const bodega of data_bodegas) {
-          const responseProductos = await fetch(`http://localhost:4000/bodegas/${bodega.id_bodega}/productos`);
-          if (responseProductos.ok) {
-            const data_productos = await responseProductos.json();
-            counts[bodega.id_bodega] = data_productos.length;
-          } else {
-            console.error(`No se pudo obtener los productos para la bodega ${bodega.id_bodega}`);
-          }
-        }
-        setProductosCount(counts);
+
+        // Cerrar el mensaje de carga al obtener las bodegas
+        Swal.close();
+        Swal.fire({
+          title: 'Éxito',
+          text: 'Los puntos de almacenamiento se han cargado correctamente.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
       } else {
-        console.error("No se pudo obtener las bodegas");
+        // Cerrar el mensaje de carga en caso de error
+        Swal.close();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo obtener las bodegas. Inténtalo de nuevo.",
+        });
       }
     } catch (error) {
-      console.error('error al obtener las bodegas', error);
+      // Cerrar el mensaje de carga en caso de error
+      Swal.close();
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Ocurrió un error al intentar obtener las bodegas.",
+      });
     }
   };
 
+
   const obtenerEmpleados = async () => {
     try {
-      const response = await fetch("http://localhost:4000/empleados");
+      const response = await fetch(`${apiUrl}/empleados`);
       if (response.ok) {
         const data_empleados = await response.json();
-        setEmpleados(data_empleados);
+        setEmpleados(data_empleados); // Asignar los datos sin notificaciones de Swal
       } else {
-        console.error("No se pudo obtener los empleados");
+        console.error("Error al obtener la lista de empleados");
       }
     } catch (error) {
-      console.error('error al obtener los empleados', error);
+      console.error("Hubo un problema al intentar obtener los empleados:", error);
     }
   };
 
@@ -125,7 +139,7 @@ const Bodegas = () => {
       });
 
       if (result.isConfirmed) {
-        const response = await fetch(`http://localhost:4000/bodegas/${bodegaId}`, {
+        const response = await fetch(`${apiUrl}/bodegas/${bodegaId}`, {
           method: 'DELETE',
         });
 
@@ -158,7 +172,7 @@ const Bodegas = () => {
   const enviarForm = async (e) => {
     e.preventDefault();
     try {
-      let url = 'http://localhost:4000/bodegas';
+      let url = `${apiUrl}/bodegas`;
       let method = 'POST';
       if (modoEditar) {
         url += `/${bodegaID}`;
@@ -173,18 +187,25 @@ const Bodegas = () => {
         body: JSON.stringify(formData),
       });
 
+      // Verifica si hubo un error en la solicitud
       if (response.status === 400) {
-        // const data = await response.json();
-        console.error('Error al agregar o actualizar la bodega');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Datos incorrectos o incompletos. Por favor revisa el formulario.',
+        });
         return;
       }
 
       if (!response.ok) {
-        console.error('Error al agregar o actualizar la bodega');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Hubo un problema al procesar la solicitud. Inténtalo de nuevo.',
+        });
         return;
       }
 
-      // const data = await response.json();
 
       if (modoEditar) {
         Swal.fire({
@@ -206,42 +227,54 @@ const Bodegas = () => {
       ocultarFormulario();
       obtenerBodegas();
     } catch (error) {
-      console.error('Error en la solicitud:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error en la solicitud',
+        text: 'Ocurrió un error al intentar conectar con el servidor. Por favor, inténtalo de nuevo más tarde.',
+      });
     }
 
   };
 
 
+  /**
+ * Obtiene los detalles de una bodega específica por su ID.
+ * @param {number} idBodega - ID de la bodega que se desea consultar.
+ * @returns {Promise<void>}
+ *
+ * Realiza una petición GET a la API para obtener la información de una bodega
+ * específica y actualiza el estado 'detalleBodega' con la información recibida.
+ * En caso de éxito, incluye el nombre del encargado si está disponible en la lista
+ * de empleados. Si ocurre un error, se notifica al usuario mediante un mensaje de alerta.
+ */
   const obtenerBodegaPorId = async (idBodega) => {
     try {
-      const response = await fetch(`http://localhost:4000/bodegas/${idBodega}`);
+      const response = await fetch(`${apiUrl}/bodegas/${idBodega}`);
       if (response.ok) {
         const data = await response.json();
         const encargado = empleados.find(emp => emp.id_empleado === data.encargado);
         setDetalleBodega({ ...data, encargado: encargado ? encargado.nombres : 'Desconocido' });
       } else {
-        console.error("No se pudo obtener la bodega");
+        // Si la respuesta no es exitosa, muestra una alerta de error al usuario
+        Swal.fire({
+          icon: "error",
+          title: "Error al obtener la bodega",
+          text: "No se pudo obtener la información de la bodega. Por favor, intenta nuevamente.",
+        });
       }
     } catch (error) {
-      console.error('error al obtener la bodega', error);
+      // Manejo de errores de conexión u otros problemas no anticipados
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de conexión',
+        text: 'Ocurrió un error al intentar conectar con el servidor. Inténtalo de nuevo más tarde.',
+      });
     }
   };
 
-  const obtenerProductosPorBodega = async (idBodega) => {
-    try {
-      const response = await fetch(`http://localhost:4000/bodegas/${idBodega}/productos`);
-      if (response.ok) {
-        const data_productos = await response.json();
-        setListaProductos(data_productos);
-      } else {
-        console.error("No se pudo obtener los productos de la bodega");
-      }
-    } catch (error) {
-      console.error('error al obtener los productos de la bodega', error);
-    }
-    setModalProductos(true);
-    setDetalleBodega(false);
-  };
+
+
+
 
 
   const mostarFormulario = () => {
@@ -250,7 +283,6 @@ const Bodegas = () => {
   };
 
   const ocultarFormulario = () => {
-    setModalProductos(false);
     setDetalleBodega(null);
     setFormulario(false);
     setFormData({
@@ -259,8 +291,6 @@ const Bodegas = () => {
       direccion: '',
       encargado: ''
     });
-    setListaProductos([]);
-    setBusqueda('');
   };
 
   const style_form = {
@@ -313,59 +343,41 @@ const Bodegas = () => {
     setSubMenu(false)
   };
 
-  const style_list = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '80%',
-    height: '80vh', // Establece una altura específica para permitir el desplazamiento
-    bgcolor: '#fff',
-    pt: 2,
-    px: 4,
-    pb: 3,
-    overflowY: 'auto', // Desplazamiento solo vertical
-    '@media (max-width: 600px)': {
-      width: '100%',
-      position: 'relative',
-      top: 'auto',
-      left: 'auto',
-      transform: 'none',
-      minHeight: '100vh', // Ajusta la altura para pantallas pequeñas
-    },
-  };
-
   const capitalizeWords = (str) => {
     return str.split(' ').map(word => capitalize(word)).join(' ');
   };
   const capitalize = (str) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
-  const filteredProductos = listaProductos.filter(producto =>
-    producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    producto.referencia.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
   return (
     <section className="section-item">
 
-      <section className="witches">
-        <ul className="witches-list">
-          <li className="witches-item">
-            <span className="cantidad-empleados">{bodegas.length}</span>
-            Lista de los puntos de almacenamiento
-          </li>
-          <li>
-            <IconButton
-              onClick={mostarFormulario}
-              style={{ background: 'var(--tercero)' }}>
-              <AddIcon style={{ color: 'var(--primer)' }} />
-            </IconButton>
-          </li>
-        </ul>
-      </section>
+      <div className=" contenedor_buscar">
+        <div className="witches">
+          <ul className="witches-list ">
+            <li className="witches-item">
+              <span className="cantidad-empleados">{bodegas.length}</span>
+              Lista de Bodegas
+            </li>
+
+          </ul>
+        </div>
+        <IconButton
+          onClick={mostarFormulario}
+          style={{ background: 'var(--tercero)' }}>
+          <AddIcon style={{ color: 'var(--primer)' }} />
+        </IconButton>
+      </div>
 
       <table className="tabla-items">
+        <thead>
+          <tr>
+            <th className="a1">Nombre</th>
+            <th className="a1">Telefono y direccion</th>
+            <th className="a1">Encargado</th>
+          </tr>
+        </thead>
         <tbody>
           {bodegas.map((bodega, index) => (
             <tr className="fila" key={index}>
@@ -390,34 +402,11 @@ const Bodegas = () => {
                 <div className="centered-content">
 
                   <PersonOutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                  {bodega.encargado}
+                  {capitalizeWords(bodega.encargado)}
                 </div>
               </td>
 
-              <td className="a1">
-                <div className="centered-content" onClick={() => obtenerProductosPorBodega(bodega.id_bodega)}>
-                  <div className="contacto">
-                    <span>Cantidad de productos</span>
-                    <Button
-                      style={{ width: 'auto', margin: '0 auto', fontSize: '1.1rem' }}
-                      variant="outlined"
-                      color="primary"
-                      size="small"
-                    >{productosCount[bodega.id_bodega] || 0}</Button>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <Button
-                  style={{ width: 'auto', margin: '0 auto', fontSize: '1.1rem' }}
-                  variant="out"
-                  color="inherit"
-                  size="small"
 
-                >
-                </Button>
-
-              </td>
 
               <td className="a10">
                 <IconButton onClick={() => setSubMenu(bodega.id_bodega)}>
@@ -549,14 +538,6 @@ const Bodegas = () => {
 
 
               <div className="contenedor-detalles">
-                <div className="detalle_item">
-                  <WarehouseIcon style={{ color: '#949393', fontSize: '3rem' }} />
-                  <div className="centered-content-detalle">
-                    <strong className="detalle_titulo">Cantidad de productos en bodega {listaProductos[detalleBodega.nombres]}</strong>
-                    <span className="detalle_valor"> {productosCount[detalleBodega.id_bodega] || 0}</span>
-                  </div>
-                </div>
-
 
                 <div className="detalle_item">
                   <WarehouseIcon style={{ color: '#949393', fontSize: '3rem' }} />
@@ -584,7 +565,7 @@ const Bodegas = () => {
                   <PersonOutlinedIcon style={{ color: '#949393', fontSize: '3rem' }} />
                   <div className="centered-content-detalle">
                     <strong className="detalle_titulo">Ecargado del punto</strong>
-                    <span className="detalle_valor">{detalleBodega.encargado}</span>
+                    <span className="detalle_valor">{capitalizeWords(detalleBodega.encargado)}</span>
                   </div>
                 </div>
               </div>
@@ -592,78 +573,6 @@ const Bodegas = () => {
           )}
         </Box>
       </Modal >
-      <Modal
-        open={modalProductos}
-        onClose={ocultarFormulario}
-        aria-labelledby="parent-modal-title"
-        aria-describedby="parent-modal-description"
-      >
-        <Box sx={{ ...style_list }}>
-          <div className="cerrar-boton" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h6 style={{ fontSize: '1.4rem' }}>Cantidad de productos en bodega: {listaProductos.length}</h6>
-            <IconButton onClick={() => setModalProductos(false)}>
-              <CloseIcon />
-            </IconButton>
-          </div>
-          <section className="contenedor_buscar" style={{ marginBottom: '20px' }}>
-            <InputBase
-              style={{ fontSize: '1.6rem' }}
-              placeholder="Buscar productos"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </section>
-          {listaProductos.length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '3rem', marginTop: '120px' }}>No hay productos almacenados en esta bodega</p>
-          ) : (
-            filteredProductos.length === 0 ? (
-              <p style={{ textAlign: 'center', fontSize: '3rem', marginTop: '120px' }}>No se encontró el producto</p>
-            ) : (
-              <table className="tabla-items">
-                <tbody>
-                  {filteredProductos.map((producto) => (
-                    <tr className="fila" key={producto.id_producto}>
-                      <td className="a4">
-                        <div className="centered-content">
-                          <Inventory2OutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                          {capitalizeWords(producto.nombre)}
-                        </div>
-                      </td>
-                      <td className="a4">
-                        <div className="centered-content">
-                          <QrCodeIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                          {capitalizeWords(producto.referencia)}
-                        </div>
-                      </td>
-                      <td className="a4">
-                        <div className="centered-content">
-                          <DescriptionIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                          {capitalizeWords(producto.descripcion)}
-                        </div>
-                      </td>
-                      <td className={producto.cantidad === 0 ? 'agotado' : 'a9'}>
-                        <div className="centered-content">
-                          <InventoryOutlinedIcon style={{ color: '#949393', fontSize: '2.5rem' }} />
-                          <strong>{producto.cantidad === 0 ? 'Agotado' : `${producto.cantidad} Unidades`}</strong>
-                        </div>
-                      </td>
-                      <td className={producto.cantidad === 0 ? 'agotado' : 'a9'}>
-                        <div className="centered-content">
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            size="small"
-                          >Mover producto</Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-          )}
-        </Box>
-      </Modal>
 
 
     </section >
